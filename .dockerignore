@@ -1,0 +1,25 @@
+
+# Node modules and build outputs
+node_modules
+dist
+
+# Docker and build files
+Dockerfile
+.dockerignore
+
+# Editor / OS junk
+.vscode
+.idea
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Optional: docs/tests
+tests
+*.md
