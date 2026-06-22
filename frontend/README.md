@@ -1,108 +1,124 @@
-# Moneymind-Frontend
-Frontend: AI Finance Bot (React + TypeScript)
-This is the frontend for the AI Finance Bot, built with React and TypeScript. It provides the user interface for interacting with the AI chat assistant and is intended for deployment on Vercel.
+# MoneyMind — Frontend
 
-Features
-User interface for chat interactions.
+The frontend is a React + TypeScript single-page app (built with Vite) that provides the chat interface for MoneyMind, an AI finance assistant. It handles user authentication, renders chat sessions and messages, and talks to the [MoneyMind backend](../backend/README.md) for AI responses and chat persistence.
 
-Displays chat history with the AI.
+## Features
 
-Allows users to send messages and receive AI-generated responses.
+- Email/password and Google sign-in, plus password reset, via Firebase Authentication
+- Multi-session chat: create, switch between, rename, and delete conversations
+- Markdown rendering for AI responses (GFM tables, lists, code blocks, raw HTML) via `react-markdown`, `remark-gfm`, and `rehype-raw`
+- Collapsible sidebar with session list, responsive down to mobile widths
+- Profile dropdown for account actions and sign-out
+- Confirmation modal for destructive actions (e.g. deleting a chat)
 
-Supports creating, renaming, and deleting chat sessions.
+## Tech stack
 
-Tech Stack
-React
+- [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/) — dev server and build tool
+- [React Router](https://reactrouter.com/) — client-side routing (`/login`, `/`)
+- [Tailwind CSS 4](https://tailwindcss.com/) — styling
+- [Firebase JS SDK](https://firebase.google.com/docs/web/setup) + [react-firebase-hooks](https://github.com/CSFrequency/react-firebase-hooks) — authentication state
+- [Axios](https://axios-http.com/) — HTTP client for the backend API
+- [Heroicons](https://heroicons.com/) — icon set
 
-TypeScript
+## Project structure
 
-Vite (or Create React App, adjust as needed)
+```
+frontend/
+├── public/                     # Static assets (logo, favicon)
+├── src/
+│   ├── components/
+│   │   ├── AppHeader.tsx           # Top bar, sidebar toggle
+│   │   ├── ChatMessagesArea.tsx    # Message list + markdown rendering
+│   │   ├── ConfirmationModal.tsx   # Reusable confirm/cancel dialog
+│   │   ├── InputArea.tsx           # Message composer
+│   │   ├── ProfileDropdown.tsx     # Account menu / sign-out
+│   │   └── Sidebar.tsx             # Chat session list (create/rename/delete)
+│   ├── pages/
+│   │   ├── ChatPage.tsx            # Main authenticated chat screen, API calls
+│   │   └── LoginPage.tsx           # Sign in / sign up / forgot password
+│   ├── App.tsx                 # Route definitions + auth-gated redirects
+│   ├── firebase.ts             # Firebase app/auth/firestore initialization
+│   ├── main.tsx                 # App entry point
+│   └── index.css                # Tailwind entry / global styles
+├── index.html
+├── package.json
+├── vite.config.ts
+└── tsconfig*.json
+```
 
-Axios (for API calls to the backend)
+## Prerequisites
 
-Tailwind CSS (or your chosen styling solution)
+- Node.js 18 or later
+- npm (or yarn/pnpm, adjusting commands accordingly)
+- A Firebase project with **Authentication** enabled (Email/Password and Google sign-in providers)
+- The [MoneyMind backend](../backend/README.md) running locally or deployed, since the chat features call it directly
 
-Heroicons (or your icon library)
+## Setup
 
-Prerequisites
-Node.js (version 18.x or later recommended)
+1. **Navigate to this directory:**
 
-npm or yarn
+   ```bash
+   cd frontend
+   ```
 
-Local Development Setup
-Navigate to the frontend directory:
+2. **Install dependencies:**
 
-# Assuming your project structure is my-project/frontend
-cd path/to/your/my-project/frontend
+   ```bash
+   npm install
+   ```
 
-Install dependencies:
+3. **Configure environment variables.**
 
-npm install
-# or
-yarn install
+   Create a `.env.local` file in `frontend/` (this is git-ignored and used only for local development):
 
-Set up Environment Variables for Local Development:
-Create a .env.local file in the root of your frontend directory. This file is for local development settings and should be added to your .gitignore file.
+   ```env
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   VITE_FIREBASE_APP_ID=your_firebase_app_id
+   VITE_SERVER_URL=http://localhost:5001/api
+   ```
 
-Add the following variable, pointing to your local Flask server's API endpoint (when you run the backend on your machine):
+   - The `VITE_FIREBASE_*` values come from your Firebase project settings (Project settings → General → Your apps → SDK setup and configuration).
+   - `VITE_SERVER_URL` should point to the base URL of the running backend, including the `/api` prefix (see [`backend/README.md`](../backend/README.md) for the default port).
 
-VITE_FIREBASE_API_KEY= firebase api key
-VITE_FIREBASE_AUTH_DOMAIN= firebase auth domain
-VITE_FIREBASE_PROJECT_ID=firebase project id
-VITE_FIREBASE_STORAGE_BUCKET= firebase storage bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID= firebase messaging sender id
-VITE_FIREBASE_APP_ID= firebase app_id
-VITE_SERVER_URL= your server url
+4. **Run the development server:**
 
-Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-npm run dev
-# or
-yarn dev
+   The app will be available at `http://localhost:5173` by default.
 
-The application should now be running, typically at http://localhost:5173 (for Vite) or http://localhost:3000 (for Create React App).
+## Available scripts
 
-Build for Production
-To create a production-ready build of your frontend (output typically goes to a dist/ or build/ folder):
+| Script | Description |
+|---|---|
+| `npm run dev` | Starts the Vite dev server with hot module reloading |
+| `npm run build` | Type-checks (`tsc -b`) and builds a production bundle into `dist/` |
+| `npm run lint` | Runs ESLint over the project |
+| `npm run preview` | Serves the production build locally for a final check |
 
-npm run build
-# or
-yarn build
+## How it talks to the backend
 
-Deployment to Vercel
-Push your frontend code to a Git repository (e.g., GitHub, GitLab, Bitbucket).
+- After signing in, the app retrieves a Firebase ID token (`authUser.getIdToken()`) and attaches it as a `Bearer` token on every request to the backend.
+- All chat-related requests go to `${VITE_SERVER_URL}/chats...` (list/create/delete/rename sessions, fetch history, send a message).
+- The backend verifies the token before processing any request — see [`backend/README.md`](../backend/README.md) for endpoint details.
 
-Sign up or log in to Vercel.
+## Deployment (Vercel)
 
-Import your Git repository as a new project on Vercel.
+1. Push this repository to GitHub, GitLab, or Bitbucket.
+2. In Vercel, import the repository as a new project and set the **root directory** to `frontend`.
+3. Vercel should auto-detect the Vite preset:
+   - **Build command:** `npm run build` (or `vite build`)
+   - **Output directory:** `dist`
+4. Add the environment variables from the [Setup](#setup) step above under Project Settings → Environment Variables, for both **Production** and **Preview** environments. Set `VITE_SERVER_URL` to your deployed backend's URL.
+5. Deploy.
 
-Configure Vercel Project Settings:
+## Notes
 
-Framework Preset: Vercel usually auto-detects this (e.g., "Vite" or "Create React App").
-
-Build Command: Verify it matches your project (e.g., npm run build or vite build).
-
-Output Directory: Verify it matches your project's build output (e.g., dist or build).
-
-Environment Variables (in Vercel project settings):
-
-Name: VITE_API_URL (if using Vite) or REACT_APP_API_URL (if using Create React App).
-
-Value: Set this to the HTTPS Trigger URL of your deployed Firebase Cloud Function (e.g., https://<region>-<your-project-id>.cloudfunctions.net/app/api or similar, where app is your Cloud Function name and /api is your Flask base route if you have one).
-
-Ensure you set this for the "Production" environment (and "Preview" if you use Vercel's preview deployments).
-
-Deploy the project on Vercel.
-
-Available Scripts
-In the frontend/package.json, you typically have scripts like:
-
-dev (or start): Runs the app in development mode.
-
-build: Builds the app for production.
-
-lint: Lints the codebase (if configured).
-
-preview: Serves the production build locally (common with Vite).
-
-(Adjust based on your actual package.json scripts.)
+- The app redirects unauthenticated users to `/login` and authenticated users away from `/login` to `/` (see `App.tsx`).
+- Tailwind v4 is wired in via the `@tailwindcss/vite` plugin, so no separate PostCSS config step is required beyond what's already in `vite.config.ts`.
